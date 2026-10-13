@@ -1,6 +1,8 @@
 import requests
 import pandas as pd
 
+from genius_api import ACCESS_TOKEN
+
 
 class Genius:
     BASE_URL = "https://api.genius.com"
@@ -21,19 +23,17 @@ class Genius:
         return response.json()
 
     def get_artist(self, search_term):
-        # Search for the artist
         search_data = self._get(
             "/search",
             params={"q": search_term}
         )
 
-        # Get the primary artist ID from the first hit
-        artist_id = search_data["response"]["hits"][0]["result"]["primary_artist"]["id"]
+        artist_id = (
+            search_data["response"]["hits"][0]
+            ["result"]["primary_artist"]["id"]
+        )
 
-        # Get artist information
-        artist_data = self._get(f"/artists/{artist_id}")
-
-        return artist_data
+        return self._get(f"/artists/{artist_id}")
 
     def get_artists(self, search_terms):
         artists = []
@@ -52,17 +52,7 @@ class Genius:
         return pd.DataFrame(artists)
 
 
-
-import os
-from dotenv import load_dotenv
-from apputil import Genius
-
-load_dotenv()
-
-ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
-
 genius = Genius(access_token=ACCESS_TOKEN)
-
 with open("artists.txt", "r", encoding="utf-8") as file:
     artists = [line.strip() for line in file if line.strip()]
 
