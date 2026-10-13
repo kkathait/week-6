@@ -1,4 +1,5 @@
 import requests
+import pandas as pd
 
 
 class Genius:
@@ -20,61 +21,53 @@ class Genius:
         return response.json()
 
     def get_artist(self, search_term):
-        # Search Genius
+        # Search for the artist
         search_data = self._get(
             "/search",
             params={"q": search_term}
         )
 
-        # Artist ID from first hit
+        # Get the primary artist ID from the first hit
         artist_id = search_data["response"]["hits"][0]["result"]["primary_artist"]["id"]
 
-        # Get artist info
+        # Get artist information
         artist_data = self._get(f"/artists/{artist_id}")
 
-        # Return the artist JSON dictionary
         return artist_data
 
-import requests
-import pandas as pd
-def get_artists(self, search_terms):
-    artists = []
+    def get_artists(self, search_terms):
+        artists = []
 
-    for search_term in search_terms:
-        artist_data = self.get_artist(search_term)
+        for search_term in search_terms:
+            artist_data = self.get_artist(search_term)
+            artist = artist_data["response"]["artist"]
 
-        artist = artist_data["response"]["artist"]
+            artists.append({
+                "search_term": search_term,
+                "artist_name": artist["name"],
+                "artist_id": artist["id"],
+                "followers_count": artist.get("followers_count")
+            })
 
-        artists.append({
-            "search_term": search_term,
-            "artist_name": artist["name"],
-            "artist_id": artist["id"],
-            "followers_count": artist.get("followers_count")
-        })
-
-    return pd.DataFrame(artists)
+        return pd.DataFrame(artists)
 
 
-from dotenv import load_dotenv
+
 import os
+from dotenv import load_dotenv
+from apputil import Genius
 
-def load_artists(filename):
-    with open(filename, "r", encoding="utf-8") as file:
-        return [line.strip() for line in file if line.strip()]
+load_dotenv()
 
+ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 
-def main():
-    load_dotenv()
+genius = Genius(access_token=ACCESS_TOKEN)
 
-    access_token = os.getenv("ACCESS_TOKEN")
+with open("artists.txt", "r", encoding="utf-8") as file:
+    artists = [line.strip() for line in file if line.strip()]
 
-    genius = Genius(access_token=access_token)
+df = genius.get_artists(artists)
 
-    artists = load_artists("artists.txt")
+df.to_csv("artists.csv", index=False)
 
-    df = genius.get_artists(artists)
-
-    df.to_csv("artists.csv", index=False)
-
-    print(f"Saved {len(df)} artists to artists.csv")
-
+print(f"Saved {len(df)} artists to artists.csv")
