@@ -26,7 +26,6 @@ class Genius:
             timeout=30
         )
         response.raise_for_status()
-
         return response.json()
 
     def _search_artist(self, search_term):
